@@ -85,7 +85,7 @@ class SegTree {
 
     void push(int id) {
         if (!tag[id]) return;
-        int lastLevelStart = 1 << findDepth(n);
+        int lastLevelStart = (1 << findDepth(n)) - 1;
         if (id >= lastLevelStart) return;
 
         // TODO: this value depends on merge function
