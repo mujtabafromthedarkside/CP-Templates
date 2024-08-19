@@ -19,7 +19,7 @@ class SegTree {
     // TODO: This value will vary depending on merge operation
     Datatype defaultValue = 0;
     vector<Datatype> a;
-    vector<bool> tag;
+    vector<Datatype> lazy;
 
     static int findDepth(int n) { return ((int)log2(n - 0.001) + 1); }
 
@@ -27,7 +27,7 @@ class SegTree {
         n = v.size();
         ns = (1 << (findDepth(n) + 1)) - 1;
         a.resize(ns, defaultValue);
-        tag.resize(ns, false);
+        lazy.resize(ns, defaultValue);
         for (int i = 0; i < v.size(); i++) {
             update(i, v[i]);
         }
@@ -43,14 +43,13 @@ class SegTree {
         if (R < l || L > r) return;
 
         if (L == R) {
-            a[id] = x;
+            a[id] = merge(a[id], x);
         }  // if search space lies within required range
         else if (L >= l && R <= r) {
-            tag[id] = true;
-            // TODO: this depends on merge operation
-            a[id] = x * (R - L + 1);
+            lazy[id] = merge(lazy[id], x);
+            push(id, L, R);
         } else {
-            push(id);
+            push(id, L, R);
             int mid = (L + R) / 2;
             // a[id] = merge operation performed over the range [L, R]
             update(l, r, x, id * 2 + 1, L, mid);
@@ -68,12 +67,10 @@ class SegTree {
         // the whole search space is outside required range
         if (R < l || L > r) return defaultValue;
 
+        push(id, L, R);
         // the whole search space is within required range
-        if (L >= l && R <= r) {
-            return a[id];
-        }
+        if (L >= l && R <= r) return a[id];
 
-        push(id);
         int mid = (L + R) / 2;
         int left = query(l, r, id * 2 + 1, L, mid);
         int right = query(l, r, id * 2 + 2, mid + 1, R);
@@ -83,21 +80,17 @@ class SegTree {
     // TODO: aggregate function
     Datatype merge(Datatype x, Datatype y) { return x + y; }
 
-    void push(int id) {
-        if (!tag[id]) return;
-        int lastLevelStart = (1 << findDepth(n)) - 1;
-        if (id >= lastLevelStart) return;
+    void push(int id, int L, int R) {
+        if (!lazy[id]) return;
 
         // TODO: this value depends on merge function
-        Datatype pushValue = a[id] / 2;
+        a[id] = merge(a[id], lazy[id] * (R - L + 1));
 
-        tag[id * 2 + 1] = true;
-        a[id * 2 + 1] = pushValue;
-
-        tag[id * 2 + 2] = true;
-        a[id * 2 + 2] = pushValue;
-
-        tag[id] = false;
+        if (id * 2 + 2 < ns) {
+            lazy[id * 2 + 1] = merge(lazy[id * 2 + 1], lazy[id]);
+            lazy[id * 2 + 2] = merge(lazy[id * 2 + 2], lazy[id]);
+        }
+        lazy[id] = defaultValue;
     }
 
     void printTree() {
@@ -142,13 +135,13 @@ class SegTree {
             for (int i = 0; i < n; i++) cout << " ";
         };
 
-        int lastLevelCount = 1 << findDepth(n);
-        int spaceBefore = lastLevelCount - 1;
-        int spaceBetween = 2 * spaceBefore + 1;  // space
+        int lastLevelCount = 1 << findDepth(n);   // # values in last level
+        int spaceBefore = lastLevelCount - 1;     // space before a level
+        int spaceBetween = 2 * spaceBefore + 1;   // space between 2 nodes
+        for (int i = 0; i < n; i++) query(i, i);  // pushes all the lazy
         for (int i = 0; i < (int)a.size(); i = i * 2 + 1) {
             printSpaces(spaceBefore * spaceNumber);
             for (int j = i; j < min(i * 2 + 1, ns); j++) {
-                push(j);
                 cout << setw(spaceNumber) << a[j];
                 printSpaces(spaceBetween * spaceNumber);
             }
