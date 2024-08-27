@@ -43,7 +43,7 @@ using namespace std;
 template <class T>
 using Tree = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 template <class T>
-int sz(T a) {
+int sz(T &a) {
     return a.size();
 }
 int norm(int n) { return (n % MOD + MOD) % MOD; }
